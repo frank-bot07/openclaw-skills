@@ -1,0 +1,15 @@
+{
+  "name": "openclaw-skill-preflight",
+  "version": "1.0.0",
+  "description": "Pre-Flight Update Checker — prevents config crashes during OpenClaw updates",
+  "keywords": ["openclaw", "skill", "migration", "config", "update"],
+  "license": "MIT",
+  "author": "OpenClaw Community",
+  "scripts": {
+    "check": "bash scripts/preflight.sh check",
+    "fix": "bash scripts/preflight.sh fix",
+    "update": "bash scripts/preflight.sh update",
+    "rollback": "bash scripts/preflight.sh rollback",
+    "history": "bash scripts/preflight.sh history"
+  }
+}

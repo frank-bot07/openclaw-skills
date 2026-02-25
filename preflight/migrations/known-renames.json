@@ -1,0 +1,37 @@
+{
+  "migrations": [
+    {
+      "version": "2026.2.21",
+      "changes": [
+        {
+          "type": "rename",
+          "from": "channels.discord.botToken",
+          "to": "channels.discord.token",
+          "description": "Discord bot token field renamed"
+        }
+      ]
+    },
+    {
+      "version": "2026.2.22",
+      "changes": [
+        {
+          "type": "rename",
+          "from": "channels.discord.groups",
+          "to": "channels.discord.guilds",
+          "description": "Discord groups renamed to guilds to match Discord API terminology"
+        }
+      ]
+    },
+    {
+      "version": "2026.2.23",
+      "changes": [
+        {
+          "type": "rename_nested",
+          "from": "channels.discord.guilds.*.users",
+          "to": "channels.discord.guilds.*.members",
+          "description": "Guild users renamed to members for clarity"
+        }
+      ]
+    }
+  ]
+}
