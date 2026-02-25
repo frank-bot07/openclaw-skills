@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Switchboard v3</title>
+<style>
+/* ─── Reset & Base ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #09090b;
+  --surface: #18181b;
+  --surface2: #27272a;
+  --border: #3f3f46;
+  --muted: #71717a;
+  --text: #f4f4f5;
+  --text-dim: #a1a1aa;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --blue: #3b82f6;
+  --purple: #a855f7;
+  --radius: 8px;
+  --radius-sm: 4px;
+  font-size: 14px;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.5; overflow-x: hidden; }
+a { color: var(--accent); text-decoration: none; }
+input, select, button, textarea { font: inherit; }
+button { cursor: pointer; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Layout ────────────────────────────────────────────────────────────── */
+#app { min-height: 100vh; display: flex; flex-direction: column; }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 22px; }
+.header-status { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.validate-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; transition: all 0.15s; }
+.validate-btn:hover { border-color: var(--accent); color: var(--accent); }
+.backup-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; transition: all 0.15s; }
+.backup-btn:hover { border-color: var(--green); color: var(--green); }
+
+.tabs { display: flex; gap: 2px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; }
+.tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; cursor: pointer; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab .badge { background: var(--surface2); color: var(--text-dim); font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+.tab.active .badge { background: var(--accent); color: white; }
+
+main { flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ─── Cards ─────────────────────────────────────────────────────────────── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ─── Status dots ───────────────────────────────────────────────────────── */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.dot.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.dot.orange { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+.dot.gray { background: var(--muted); }
+.dot.blue { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+
+/* ─── Badges ────────────────────────────────────────────────────────────── */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.badge.green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.badge.red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge.yellow { background: rgba(234,179,8,0.15); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }
+.badge.orange { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+.badge.blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+.badge.purple { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+.badge.gray { background: rgba(113,113,122,0.15); color: var(--muted); border: 1px solid rgba(113,113,122,0.3); }
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; border: 1px solid transparent; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; color: var(--red); border-color: rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.1); }
+.btn-success { background: transparent; color: var(--green); border-color: rgba(34,197,94,0.3); }
+.btn-success:hover { background: rgba(34,197,94,0.1); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Form elements ─────────────────────────────────────────────────────── */
+.input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm); width: 100%; transition: border-color 0.15s; }
+.input:focus { outline: none; border-color: var(--accent); }
+.input-group { display: flex; gap: 8px; }
+.input-group .input { flex: 1; }
+label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; display: block; font-weight: 500; }
+.form-group { margin-bottom: 16px; }
+
+select.input option { background: var(--surface); }
+
+/* ─── Table / List ──────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.truncate { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ─── Model pill ────────────────────────────────────────────────────────── */
+.model-pill { display: inline-flex; align-items: center; gap: 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-pill.flagged { border-color: rgba(249,115,22,0.5); color: var(--orange); background: rgba(249,115,22,0.08); }
+.model-pill.default { color: var(--muted); }
+
+/* ─── Key display ───────────────────────────────────────────────────────── */
+.key-display { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+/* ─── Panels layout ─────────────────────────────────────────────────────── */
+/* Panel 1 */
+.gateway-section { display: flex; flex-direction: column; gap: 16px; }
+.models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 12px; }
+.model-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.model-card.invalid { border-color: rgba(239,68,68,0.3); }
+.model-card-info { min-width: 0; }
+.model-card-id { font-size: 11px; font-family: monospace; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-card-alias { font-size: 10px; color: var(--muted); }
+.provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.provider-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.provider-name { font-size: 12px; font-weight: 500; }
+.provider-env { font-size: 10px; color: var(--muted); font-family: monospace; }
+
+/* Panel 2 - Cron */
+.cron-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px; }
+.cron-count { font-size: 12px; color: var(--muted); margin-left: auto; }
+.bulk-bar { display: none; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bulk-bar.visible { display: flex; }
+.bulk-select-count { font-size: 12px; color: var(--accent); font-weight: 500; }
+.inline-assign { display: inline-flex; align-items: center; gap: 6px; }
+.job-row.selected td { background: rgba(99,102,241,0.05); }
+.job-row.flagged td:first-child { border-left: 2px solid var(--orange); }
+td.actions-cell { white-space: nowrap; }
+
+/* Panel 3 - Health */
+.health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.health-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: border-color 0.15s; }
+.health-card.has-issues { border-color: rgba(239,68,68,0.3); }
+.health-card.warning { border-color: rgba(249,115,22,0.3); }
+.health-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.health-model-name { font-family: monospace; font-size: 12px; font-weight: 600; word-break: break-all; }
+.health-alias { font-size: 11px; color: var(--muted); }
+.health-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.health-actions { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+
+/* ─── Toast ─────────────────────────────────────────────────────────────── */
+#toasts { position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; min-width: 280px; max-width: 380px; pointer-events: all; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: slideIn 0.2s ease; }
+.toast.success { border-color: rgba(34,197,94,0.4); }
+.toast.error { border-color: rgba(239,68,68,0.4); }
+.toast.warning { border-color: rgba(234,179,8,0.4); }
+.toast-icon { font-size: 16px; flex-shrink: 0; }
+.toast-msg { flex: 1; line-height: 1.4; }
+.toast-close { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; flex-shrink: 0; padding: 0; }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { to { transform: translateX(20px); opacity: 0; } }
+
+/* ─── Modal ─────────────────────────────────────────────────────────────── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; min-width: 400px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* ─── Warn box ──────────────────────────────────────────────────────────── */
+.warn-box { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--yellow); line-height: 1.6; }
+.err-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--red); line-height: 1.6; }
+.info-box { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--blue); line-height: 1.6; }
+
+/* ─── Loading ───────────────────────────────────────────────────────────── */
+.loading { color: var(--muted); font-size: 13px; padding: 40px; text-align: center; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Divider ───────────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ─── Validation result ─────────────────────────────────────────────────── */
+#validate-result { margin-top: 8px; }
+
+/* ─── Search box ────────────────────────────────────────────────────────── */
+.search-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; min-width: 200px; }
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { outline: none; border-color: var(--accent); }
+
+/* ─── Misc ──────────────────────────────────────────────────────────────── */
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.ml-auto { margin-left: auto; }
+.text-muted { color: var(--muted); }
+.text-sm { font-size: 12px; }
+.font-mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+.mb-3 { margin-bottom: 12px; }
+.mt-2 { margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════ HEADER ════════════════════════════════════════════ -->
+<header>
+  <div class="logo"><span class="logo-icon">⚡</span>Model Switchboard <span style="color:var(--muted);font-size:12px;font-weight:400">v3</span></div>
+  <div class="header-status" id="health-indicator">
+    <span class="dot gray"></span>
+    <span style="font-size:12px;color:var(--muted)">Loading...</span>
+  </div>
+  <button class="validate-btn" onclick="runValidation()">🔍 Validate</button>
+  <button class="backup-btn" onclick="createBackup()">💾 Backup Now</button>
+</header>
+
+<div id="validate-result"></div>
+
+<!-- ═══════════════════ TABS ══════════════════════════════════════════════ -->
+<div class="tabs">
+  <button class="tab active" data-tab="gateway" onclick="switchTab('gateway', this)">
+    🌐 Gateway Config <span class="badge" id="tab-badge-gateway">—</span>
+  </button>
+  <button class="tab" data-tab="cron" onclick="switchTab('cron', this)">
+    ⏰ Cron Jobs <span class="badge" id="tab-badge-cron">—</span>
+  </button>
+  <button class="tab" data-tab="health" onclick="switchTab('health', this)">
+    🩺 Model Health <span class="badge" id="tab-badge-health">—</span>
+  </button>
+  <button class="tab" data-tab="backups" onclick="switchTab('backups', this)">
+    💾 Backups <span class="badge" id="tab-badge-backups">—</span>
+  </button>
+</div>
+
+<main>
+
+<!-- ═══════════════════ PANEL 1: GATEWAY CONFIG ═══════════════════════════ -->
+<div class="panel active" id="panel-gateway">
+  <div class="gateway-section">
+
+    <!-- Gateway Routes Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🌐 Gateway Routing</div>
+        <button class="btn btn-ghost btn-sm" onclick="openGatewayEditModal()">✏️ Edit</button>
+      </div>
+      <div class="grid-2" id="gateway-routes">
+        <div class="loading"><span class="spinner"></span>Loading...</div>
+      </div>
+    </div>
+
+    <!-- Provider Keys Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔑 Provider API Keys</div>
+        <button class="btn btn-ghost btn-sm" onclick="openKeyModal()">➕ Add / Update Key</button>
+      </div>
+      <div class="provider-grid" id="provider-keys">
+        <div class="loading"><span class="spinner"></span>Loading...</div>
+      </div>
+    </div>
+
+    <!-- Allowed Models Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📋 Allowed Models <span class="text-muted text-sm" id="models-count"></span></div>
+        <button class="btn btn-primary btn-sm" onclick="openAddModelModal()">➕ Add Model</button>
+      </div>
+      <div class="models-grid" id="allowed-models">
+        <div class="loading"><span class="spinner"></span>Loading...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ PANEL 2: CRON JOBS ═══════════════════════════════ -->
+<div class="panel" id="panel-cron">
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="margin-bottom:12px;">
+      <div class="card-title">⏰ Cron Job Command Center</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadCronJobs()">🔄 Refresh</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="cron-toolbar">
+      <input class="search-input" type="text" placeholder="🔍 Search jobs..." id="cron-search" oninput="filterCronTable()">
+      <div class="filter-group">
+        <label style="margin:0">Status:</label>
+        <select class="filter-select" id="filter-status" onchange="filterCronTable()">
+          <option value="">All</option>
+          <option value="ok">✅ OK</option>
+          <option value="error">❌ Error</option>
+          <option value="flagged">⚠️ Flagged</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label style="margin:0">Model:</label>
+        <select class="filter-select" id="filter-model" onchange="filterCronTable()">
+          <option value="">All models</option>
+        </select>
+      </div>
+      <span class="cron-count" id="cron-count">Loading...</span>
+    </div>
+
+    <!-- Bulk Action Bar -->
+    <div class="bulk-bar" id="bulk-bar">
+      <span class="bulk-select-count" id="bulk-count">0 selected</span>
+      <span style="color:var(--muted);font-size:12px;">Reassign to:</span>
+      <select class="filter-select" id="bulk-target-model">
+        <option value="default">default</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="executeBulkReassign()">Apply</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕ Clear</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="bulkReassignModal()">🔄 Bulk Reassign by Model...</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="cron-table">
+        <thead>
+          <tr>
+            <th style="width:32px;"><input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this)"></th>
+            <th>Name</th>
+            <th>Model</th>
+            <th>Schedule</th>
+            <th>Target</th>
+            <th>Status</th>
+            <th>Last Run</th>
+            <th>Next</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="cron-tbody">
+          <tr><td colspan="9" class="loading"><span class="spinner"></span>Loading cron jobs...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ PANEL 3: MODEL HEALTH ═══════════════════════════= -->
+<div class="panel" id="panel-health">
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div class="card-title">🩺 Model Health Monitor</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadModelHealth()">🔄 Refresh</button>
+    </div>
+    <div id="health-summary" class="mb-3"></div>
+  </div>
+  <div class="health-grid" id="health-grid">
+    <div class="loading"><span class="spinner"></span>Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PANEL 4: BACKUPS ══════════════════════════════════ -->
+<div class="panel" id="panel-backups">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">💾 Backup & Rollback</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success btn-sm" onclick="createBackup()">➕ Create Backup</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadBackups()">🔄 Refresh</button>
+      </div>
+    </div>
+    <div class="info-box mb-3">
+      Rolling backups: last 10 kept automatically. Each backup captures openclaw.json and cron/jobs.json.
+    </div>
+    <div id="backups-list">
+      <div class="loading"><span class="spinner"></span>Loading backups...</div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ─── Toast Container ──────────────────────────────────────────────────── -->
+<div id="toasts"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODALS
+  ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Add/Update API Key Modal -->
+<div class="modal-overlay" id="modal-key">
+  <div class="modal">
+    <div class="modal-title">🔑 Add / Update API Key</div>
+    <div class="warn-box mb-3">Keys are stored in openclaw.json env.vars and backed up to .env. They are NEVER shown in full — only the last 4 chars are displayed.</div>
+    <div class="form-group">
+      <label>Key Name (e.g. XAI_API_KEY, MOONSHOT_API_KEY)</label>
+      <input class="input" type="text" id="key-name-input" placeholder="PROVIDER_API_KEY" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>API Key Value</label>
+      <input class="input" type="password" id="key-value-input" placeholder="sk-..." autocomplete="new-password">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-key')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Model Modal -->
+<div class="modal-overlay" id="modal-add-model">
+  <div class="modal">
+    <div class="modal-title">➕ Add Model to Allowed List</div>
+    <div class="info-box mb-3">Model will be validated: provider must have an API key configured.</div>
+    <div class="form-group">
+      <label>Model ID (format: provider/model-name)</label>
+      <input class="input" type="text" id="add-model-id" placeholder="e.g. openai/gpt-5.3" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Alias (optional)</label>
+      <input class="input" type="text" id="add-model-alias" placeholder="e.g. gpt-new" autocomplete="off">
+    </div>
+    <div id="add-model-error" style="display:none;" class="err-box mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-model')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddModel()">Add Model</button>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Model Confirm Modal -->
+<div class="modal-overlay" id="modal-remove-model">
+  <div class="modal">
+    <div class="modal-title" id="rm-title">Remove Model</div>
+    <div id="rm-warning"></div>
+    <div class="modal-footer" id="rm-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-remove-model')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reassign Cron Model Modal (single job) -->
+<div class="modal-overlay" id="modal-reassign">
+  <div class="modal">
+    <div class="modal-title">🔄 Reassign Model</div>
+    <div id="reassign-job-name" class="mb-3" style="color:var(--text-dim);font-size:12px;"></div>
+    <div class="form-group">
+      <label>New Model</label>
+      <select class="input" id="reassign-model-select">
+        <option value="default">default (inherits gateway primary)</option>
+      </select>
+    </div>
+    <input type="hidden" id="reassign-job-id">
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reassign')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReassign()">Reassign</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Reassign by Model Modal -->
+<div class="modal-overlay" id="modal-bulk-reassign">
+  <div class="modal">
+    <div class="modal-title">🔄 Bulk Reassign by Model</div>
+    <div class="info-box mb-3">Reassign ALL cron jobs currently using one model to another.</div>
+    <div class="form-group">
+      <label>From Model</label>
+      <select class="input" id="bulk-from-model"></select>
+    </div>
+    <div class="form-group">
+      <label>To Model</label>
+      <select class="input" id="bulk-to-model">
+        <option value="default">default</option>
+      </select>
+    </div>
+    <div id="bulk-reassign-error" style="display:none;" class="err-box mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bulk-reassign')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitBulkReassignModal()">Reassign All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Gateway Routing Modal -->
+<div class="modal-overlay" id="modal-gateway">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Gateway Routing</div>
+    <div class="form-group">
+      <label>Primary Model</label>
+      <select class="input" id="gw-primary"></select>
+    </div>
+    <div class="form-group">
+      <label>Fallback Models (comma-separated model IDs)</label>
+      <input class="input" type="text" id="gw-fallbacks" placeholder="openai/gpt-5.2, google/gemini-3-pro-preview">
+    </div>
+    <div class="form-group">
+      <label>Image Primary Model</label>
+      <select class="input" id="gw-image-primary"></select>
+    </div>
+    <div class="form-group">
+      <label>Image Fallback Models (comma-separated)</label>
+      <input class="input" type="text" id="gw-image-fallbacks" placeholder="openai/gpt-5-mini">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-gateway')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitGatewayEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+  ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+const API = 'http://localhost:7878';
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let state = {
+  config: null,
+  cronJobs: [],
+  models: [],
+  keyStatus: {},
+  selectedJobs: new Set(),
+};
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  checkHealth();
+  loadGatewayPanel();
+  loadCronJobs();
+  loadModelHealth();
+  loadBackups();
+});
+
+// ─── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success', duration = 4000) {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span class="toast-msg">${escHtml(msg)}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('toasts').prepend(t);
+  setTimeout(() => { t.style.animation = 'slideOut 0.2s ease forwards'; setTimeout(() => t.remove(), 200); }, duration);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── API helpers ─────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data;
+}
+
+async function apiPost(path, body) {
+  return apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
+// ─── Health check ────────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const d = await apiFetch('/api/health');
+    const el = document.getElementById('health-indicator');
+    el.innerHTML = `<span class="dot green"></span><span style="font-size:12px;color:var(--text-dim)">${d.version} — online</span>`;
+  } catch (e) {
+    const el = document.getElementById('health-indicator');
+    el.innerHTML = `<span class="dot red"></span><span style="font-size:12px;color:var(--red)">Server offline</span>`;
+  }
+}
+
+// ─── Tab switching ───────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ─── Modal helpers ───────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL 1 — GATEWAY CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadGatewayPanel() {
+  try {
+    const data = await apiFetch('/api/config');
+    state.config = data;
+    state.keyStatus = data.keyStatus;
+    renderGatewayRoutes(data);
+    renderProviderKeys(data.keyStatus, data.envKeys);
+    renderAllowedModels(data.models, data.keyStatus);
+    document.getElementById('tab-badge-gateway').textContent = Object.keys(data.models).length;
+  } catch(e) {
+    toast('Failed to load config: ' + e.message, 'error');
+  }
+}
+
+function renderGatewayRoutes(data) {
+  const el = document.getElementById('gateway-routes');
+  const rows = [
+    { label: '🎯 Primary', value: data.primary, role: 'primary' },
+    { label: '🔁 Fallbacks', value: (data.fallbacks || []).join(', ') || '—', role: 'fallback' },
+    { label: '🖼️ Image Primary', value: data.imagePrimary || '—', role: 'image-primary' },
+    { label: '🖼️ Image Fallbacks', value: (data.imageFallbacks || []).join(', ') || '—', role: 'image-fallback' },
+  ];
+  el.innerHTML = rows.map(r => `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500;">${r.label}</div>
+      <div class="font-mono" style="font-size:12px;color:var(--text);word-break:break-all;">${escHtml(r.value)}</div>
+    </div>
+  `).join('');
+}
+
+function renderProviderKeys(keyStatus, envKeys) {
+  const el = document.getElementById('provider-keys');
+  if (!keyStatus) { el.innerHTML = '<div class="text-muted">No key data</div>'; return; }
+
+  const items = Object.entries(keyStatus).map(([provider, info]) => {
+    const configured = info.configured;
+    const envKey = info.envKey || '—';
+    const masked = info.masked || '—';
+    return `
+      <div class="provider-item">
+        <span class="dot ${configured ? 'green' : 'red'}"></span>
+        <div>
+          <div class="provider-name">${escHtml(provider)}</div>
+          <div class="provider-env">${escHtml(envKey)}</div>
+          ${configured ? `<div class="key-display">${escHtml(masked)}</div>` : '<div style="font-size:10px;color:var(--red)">No key</div>'}
+        </div>
+      </div>
+    `;
+  });
+
+  el.innerHTML = items.join('');
+}
+
+function renderAllowedModels(models, keyStatus) {
+  const el = document.getElementById('allowed-models');
+  const count = document.getElementById('models-count');
+  if (!models || Object.keys(models).length === 0) {
+    el.innerHTML = '<div class="text-muted">No models configured.</div>';
+    count.textContent = '';
+    return;
+  }
+
+  const entries = Object.entries(models);
+  count.textContent = `(${entries.length})`;
+
+  el.innerHTML = entries.map(([mid, meta]) => {
+    const provider = mid.includes('/') ? mid.split('/')[0] : 'unknown';
+    const providerOk = keyStatus?.[provider]?.configured;
+    const alias = meta.alias || '';
+    return `
+      <div class="model-card ${providerOk === false ? 'invalid' : ''}">
+        <div class="model-card-info">
+          <div class="model-card-id">${escHtml(mid)}</div>
+          ${alias ? `<div class="model-card-alias">alias: ${escHtml(alias)}</div>` : ''}
+          <div style="margin-top:4px;display:flex;align-items:center;gap:4px;">
+            <span class="dot ${providerOk ? 'green' : providerOk === false ? 'red' : 'gray'}"></span>
+            <span style="font-size:10px;color:var(--muted)">${escHtml(provider)}</span>
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="initiateRemoveModel('${escHtml(mid)}')" title="Remove model">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Add Model Modal ─────────────────────────────────────────────────────────
+function openAddModelModal() {
+  document.getElementById('add-model-id').value = '';
+  document.getElementById('add-model-alias').value = '';
+  document.getElementById('add-model-error').style.display = 'none';
+  openModal('modal-add-model');
+  setTimeout(() => document.getElementById('add-model-id').focus(), 100);
+}
+
+async function submitAddModel() {
+  const modelId = document.getElementById('add-model-id').value.trim();
+  const alias = document.getElementById('add-model-alias').value.trim();
+  const errEl = document.getElementById('add-model-error');
+  errEl.style.display = 'none';
+
+  if (!modelId) { showModalError('add-model-error', 'Model ID is required.'); return; }
+
+  try {
+    const r = await apiPost('/api/models/add', { modelId, alias });
+    if (r.ok) {
+      toast(`Model '${modelId}' added.`, 'success');
+      closeModal('modal-add-model');
+      loadGatewayPanel();
+      loadModelHealth();
+    } else {
+      showModalError('add-model-error', r.error);
+    }
+  } catch(e) {
+    showModalError('add-model-error', e.message);
+  }
+}
+
+function showModalError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ─── Remove Model ─────────────────────────────────────────────────────────────
+async function initiateRemoveModel(modelId) {
+  // First check deps
+  try {
+    const r = await apiPost('/api/models/remove', { modelId, force: false });
+    if (r.ok) {
+      // No deps — confirm simple
+      openConfirmRemove(modelId, [], []);
+    } else if (r.requires_force) {
+      openConfirmRemove(modelId, r.dep_names || [], r.gateway_roles || [], r.deps);
+    } else {
+      toast(r.error, 'error');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// Store pending remove model id safely in JS (not in HTML onclick attr)
+let _pendingRemoveModelId = null;
+
+function openConfirmRemove(modelId, depNames, gatewayRoles, depCount) {
+  _pendingRemoveModelId = modelId;
+  document.getElementById('rm-title').textContent = `Remove Model: ${modelId}`;
+
+  let html = '';
+  if (gatewayRoles.length > 0 || depCount > 0) {
+    html += `<div class="warn-box mb-3">
+      ⚠️ <strong>Warning:</strong> This model is in use:<br>
+      ${gatewayRoles.length ? `• Gateway roles: <strong>${escHtml(gatewayRoles.join(', '))}</strong><br>` : ''}
+      ${depCount ? `• <strong>${depCount} cron job(s)</strong> will lose their model assignment: ${depNames.slice(0,5).map(n=>`<em>${escHtml(n)}</em>`).join(', ')}${depNames.length>5?` +${depNames.length-5} more`:''}` : ''}
+    </div>`;
+    document.getElementById('rm-footer').innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal('modal-remove-model')">Cancel</button>
+      <button class="btn btn-danger" onclick="forceRemovePending()">⚠️ Force Remove</button>
+    `;
+  } else {
+    html = `<div class="info-box mb-3">No cron jobs or gateway roles depend on this model. Safe to remove.</div>`;
+    document.getElementById('rm-footer').innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal('modal-remove-model')">Cancel</button>
+      <button class="btn btn-danger" onclick="forceRemovePending()">Remove</button>
+    `;
+  }
+
+  document.getElementById('rm-warning').innerHTML = html;
+  openModal('modal-remove-model');
+}
+
+async function forceRemovePending() {
+  if (!_pendingRemoveModelId) return;
+  await forceRemoveModel(_pendingRemoveModelId);
+  _pendingRemoveModelId = null;
+}
+
+async function forceRemoveModel(modelId) {
+  try {
+    const r = await apiPost('/api/models/remove', { modelId, force: true });
+    if (r.ok) {
+      toast(`Model '${modelId}' removed.`, 'success');
+      closeModal('modal-remove-model');
+      loadGatewayPanel();
+      loadModelHealth();
+      loadCronJobs();
+    } else {
+      toast(r.error, 'error');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── API Key Modal ────────────────────────────────────────────────────────────
+function openKeyModal() {
+  document.getElementById('key-name-input').value = '';
+  document.getElementById('key-value-input').value = '';
+  openModal('modal-key');
+  setTimeout(() => document.getElementById('key-name-input').focus(), 100);
+}
+
+async function submitKey() {
+  const keyName = document.getElementById('key-name-input').value.trim().toUpperCase();
+  const keyValue = document.getElementById('key-value-input').value.trim();
+  if (!keyName || !keyValue) { toast('Both fields are required.', 'warning'); return; }
+  if (keyValue.length < 8) { toast('Key seems too short — check it.', 'warning'); return; }
+
+  try {
+    const r = await apiPost('/api/config/key', { keyName, keyValue });
+    toast(`Key '${keyName}' saved (${r.masked})`, 'success');
+    closeModal('modal-key');
+    loadGatewayPanel();
+    loadModelHealth();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── Gateway Edit Modal ───────────────────────────────────────────────────────
+function openGatewayEditModal() {
+  const cfg = state.config;
+  if (!cfg) { toast('Config not loaded yet.', 'warning'); return; }
+
+  const models = cfg.models || {};
+  const opts = Object.keys(models).map(m => `<option value="${escHtml(m)}" ${m===cfg.primary?'selected':''}>${escHtml(m)}</option>`).join('');
+
+  document.getElementById('gw-primary').innerHTML = opts;
+  document.getElementById('gw-image-primary').innerHTML = opts;
+  if (cfg.imagePrimary) document.getElementById('gw-image-primary').value = cfg.imagePrimary;
+  document.getElementById('gw-fallbacks').value = (cfg.fallbacks || []).join(', ');
+  document.getElementById('gw-image-fallbacks').value = (cfg.imageFallbacks || []).join(', ');
+
+  openModal('modal-gateway');
+}
+
+async function submitGatewayEdit() {
+  const primary = document.getElementById('gw-primary').value;
+  const fallbacksRaw = document.getElementById('gw-fallbacks').value;
+  const imagePrimary = document.getElementById('gw-image-primary').value;
+  const imageFallbacksRaw = document.getElementById('gw-image-fallbacks').value;
+
+  const fallbacks = fallbacksRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const imageFallbacks = imageFallbacksRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+  try {
+    await apiPost('/api/config/gateway', { primary, fallbacks, imagePrimary, imageFallbacks });
+    toast('Gateway routing updated!', 'success');
+    closeModal('modal-gateway');
+    loadGatewayPanel();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL 2 — CRON JOBS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadCronJobs() {
+  try {
+    const data = await apiFetch('/api/cron');
+    state.cronJobs = data.jobs || [];
+    renderCronTable(state.cronJobs);
+    populateCronFilters(state.cronJobs);
+    document.getElementById('tab-badge-cron').textContent = state.cronJobs.length;
+
+    // Populate bulk model target
+    populateBulkModelSelect();
+  } catch(e) {
+    document.getElementById('cron-tbody').innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:20px;">${escHtml(e.message)}</td></tr>`;
+    toast('Failed to load cron jobs: ' + e.message, 'error');
+  }
+}
+
+function populateCronFilters(jobs) {
+  const models = new Set(['default']);
+  jobs.forEach(j => models.add(j.model));
+
+  const modelSelect = document.getElementById('filter-model');
+  const current = modelSelect.value;
+  modelSelect.innerHTML = '<option value="">All models</option>' +
+    [...models].map(m => `<option value="${escHtml(m)}" ${m===current?'selected':''}>${escHtml(m)}</option>`).join('');
+}
+
+function populateBulkModelSelect() {
+  const cfg = state.config;
+  const models = cfg ? Object.keys(cfg.models || {}) : [];
+  const opts = ['<option value="default">default</option>', ...models.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`)].join('');
+
+  document.getElementById('bulk-target-model').innerHTML = opts;
+
+  // Also populate reassign modal
+  document.getElementById('reassign-model-select').innerHTML =
+    '<option value="default">default (inherits gateway primary)</option>' +
+    models.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+}
+
+function renderCronTable(jobs) {
+  const tbody = document.getElementById('cron-tbody');
+  if (!jobs.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="padding:20px;text-align:center;">No cron jobs found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = jobs.map(j => {
+    const statusDot = { ok: 'green', error: 'red', warning: 'yellow' }[j.lastStatus] || 'gray';
+    const modelClass = j.model === 'default' ? 'default' : (j.flagged ? 'flagged' : '');
+    const checked = state.selectedJobs.has(j.id) ? 'checked' : '';
+
+    return `<tr class="job-row ${j.flagged ? 'flagged' : ''} ${state.selectedJobs.has(j.id)?'selected':''}" data-id="${escHtml(j.id)}" data-model="${escHtml(j.model)}" data-status="${escHtml(j.lastStatus)}" data-flagged="${j.flagged}">
+      <td><input type="checkbox" ${checked} onchange="toggleJobSelect('${escHtml(j.id)}', this)"></td>
+      <td>
+        <div style="font-size:12px;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(j.name)}</div>
+        ${!j.enabled ? '<div class="badge gray" style="margin-top:2px;">disabled</div>' : ''}
+      </td>
+      <td>
+        <span class="model-pill ${modelClass}" title="${escHtml(j.model)}">
+          ${j.flagged ? '⚠️ ' : ''}${escHtml(j.model)}
+        </span>
+      </td>
+      <td class="font-mono text-muted" style="font-size:11px;">${escHtml(j.scheduleExpr)}</td>
+      <td><span class="badge ${j.sessionTarget==='isolated'?'blue':'gray'}">${escHtml(j.sessionTarget)}</span></td>
+      <td><span class="flex items-center gap-2"><span class="dot ${statusDot}"></span>${escHtml(j.lastStatus)}</span></td>
+      <td class="text-muted text-sm">${escHtml(j.lastRunAgo)}</td>
+      <td class="text-muted text-sm">${escHtml(j.nextRunIn)}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" title="Reassign model"
+          data-job-id="${escHtml(j.id)}"
+          data-job-name="${escHtml(j.name)}"
+          data-job-model="${escHtml(j.model)}"
+          onclick="openReassignModalFromEl(this)">🔄</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateCronCount(jobs.length, jobs.length);
+}
+
+function filterCronTable() {
+  const search = document.getElementById('cron-search').value.toLowerCase();
+  const statusFilter = document.getElementById('filter-status').value;
+  const modelFilter = document.getElementById('filter-model').value;
+
+  const rows = document.querySelectorAll('#cron-tbody tr.job-row');
+  let visible = 0;
+
+  rows.forEach(row => {
+    const name = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+    const model = row.dataset.model || '';
+    const status = row.dataset.status || '';
+    const flagged = row.dataset.flagged === 'true';
+
+    let show = true;
+    if (search && !name.includes(search) && !model.toLowerCase().includes(search)) show = false;
+    if (statusFilter === 'flagged' && !flagged) show = false;
+    else if (statusFilter && statusFilter !== 'flagged' && status !== statusFilter) show = false;
+    if (modelFilter && model !== modelFilter) show = false;
+
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  updateCronCount(visible, state.cronJobs.length);
+}
+
+function updateCronCount(visible, total) {
+  const flagged = state.cronJobs.filter(j => j.flagged).length;
+  const errors = state.cronJobs.filter(j => j.lastStatus === 'error').length;
+  document.getElementById('cron-count').innerHTML =
+    `${visible}/${total} jobs &nbsp;|&nbsp; <span style="color:var(--red)">${errors} errors</span> &nbsp;|&nbsp; <span style="color:var(--orange)">${flagged} flagged</span>`;
+}
+
+// ─── Job selection ────────────────────────────────────────────────────────────
+function toggleJobSelect(id, cb) {
+  if (cb.checked) state.selectedJobs.add(id);
+  else state.selectedJobs.delete(id);
+
+  const row = cb.closest('tr');
+  if (row) row.classList.toggle('selected', cb.checked);
+
+  updateBulkBar();
+}
+
+function toggleSelectAll(cb) {
+  const rows = document.querySelectorAll('#cron-tbody tr.job-row');
+  rows.forEach(row => {
+    if (row.style.display === 'none') return;
+    const jobCb = row.querySelector('input[type=checkbox]');
+    const id = row.dataset.id;
+    if (cb.checked) { state.selectedJobs.add(id); row.classList.add('selected'); }
+    else { state.selectedJobs.delete(id); row.classList.remove('selected'); }
+    if (jobCb) jobCb.checked = cb.checked;
+  });
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const count = document.getElementById('bulk-count');
+  const n = state.selectedJobs.size;
+  if (n > 0) { bar.classList.add('visible'); count.textContent = `${n} selected`; }
+  else { bar.classList.remove('visible'); }
+}
+
+function clearSelection() {
+  state.selectedJobs.clear();
+  document.querySelectorAll('#cron-tbody input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#cron-tbody tr.job-row').forEach(r => r.classList.remove('selected'));
+  document.getElementById('select-all-cb').checked = false;
+  updateBulkBar();
+}
+
+async function executeBulkReassign() {
+  if (!state.selectedJobs.size) return;
+  const targetModel = document.getElementById('bulk-target-model').value;
+  const ids = [...state.selectedJobs];
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const id of ids) {
+    try {
+      const r = await apiPost('/api/cron/model', { jobId: id, model: targetModel });
+      if (r.ok) successCount++;
+      else { failCount++; toast(`Failed job ${id}: ${r.error}`, 'error'); }
+    } catch(e) {
+      failCount++;
+    }
+  }
+
+  toast(`Reassigned ${successCount} job(s) to '${targetModel}'.${failCount?` ${failCount} failed.`:''}`, successCount > 0 ? 'success' : 'error');
+  clearSelection();
+  loadCronJobs();
+}
+
+// ─── Single reassign modal ────────────────────────────────────────────────────
+function openReassignModalFromEl(btn) {
+  // Use data attributes to avoid single-quote XSS in onclick attrs
+  openReassignModal(btn.dataset.jobId, btn.dataset.jobName, btn.dataset.jobModel);
+}
+
+function openReassignModal(id, name, currentModel) {
+  document.getElementById('reassign-job-id').value = id;
+  document.getElementById('reassign-job-name').textContent = `Job: ${name}`;
+
+  const sel = document.getElementById('reassign-model-select');
+  if (sel.querySelector(`option[value="${CSS.escape(currentModel)}"]`)) {
+    sel.value = currentModel;
+  }
+
+  openModal('modal-reassign');
+}
+
+async function submitReassign() {
+  const jobId = document.getElementById('reassign-job-id').value;
+  const model = document.getElementById('reassign-model-select').value;
+
+  try {
+    const r = await apiPost('/api/cron/model', { jobId, model });
+    if (r.ok) {
+      toast(`Job reassigned to '${model}'.`, 'success');
+      closeModal('modal-reassign');
+      loadCronJobs();
+    } else {
+      toast('Error: ' + r.error, 'error');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── Bulk Reassign by Model Modal ─────────────────────────────────────────────
+function bulkReassignModal() {
+  const jobs = state.cronJobs;
+  const models = [...new Set(jobs.map(j => j.model))];
+  const cfg = state.config;
+  const allowedModels = cfg ? Object.keys(cfg.models || {}) : [];
+
+  const fromOpts = models.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+  const toOpts = ['<option value="default">default</option>', ...allowedModels.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`)].join('');
+
+  document.getElementById('bulk-from-model').innerHTML = fromOpts;
+  document.getElementById('bulk-to-model').innerHTML = toOpts;
+  document.getElementById('bulk-reassign-error').style.display = 'none';
+  openModal('modal-bulk-reassign');
+}
+
+async function submitBulkReassignModal() {
+  const fromModel = document.getElementById('bulk-from-model').value;
+  const toModel = document.getElementById('bulk-to-model').value;
+
+  if (fromModel === toModel) {
+    showModalError('bulk-reassign-error', 'From and To models are the same.');
+    return;
+  }
+
+  try {
+    const r = await apiPost('/api/cron/bulk-model', { fromModel, toModel });
+    if (r.ok) {
+      toast(`Bulk reassign: ${r.updated} job(s) moved from '${fromModel}' to '${toModel}'.`, 'success');
+      closeModal('modal-bulk-reassign');
+      loadCronJobs();
+    } else {
+      showModalError('bulk-reassign-error', r.error);
+    }
+  } catch(e) {
+    showModalError('bulk-reassign-error', e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL 3 — MODEL HEALTH
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadModelHealth() {
+  try {
+    const data = await apiFetch('/api/models');
+    state.models = data.models || [];
+    renderModelHealth(state.models);
+    document.getElementById('tab-badge-health').textContent = state.models.length;
+  } catch(e) {
+    document.getElementById('health-grid').innerHTML = `<div class="err-box">${escHtml(e.message)}</div>`;
+    toast('Failed to load model health: ' + e.message, 'error');
+  }
+}
+
+function renderModelHealth(models) {
+  const grid = document.getElementById('health-grid');
+  const summary = document.getElementById('health-summary');
+
+  const noKey = models.filter(m => !m.keyConfigured).length;
+  const withDeps = models.filter(m => m.cronDeps > 0).length;
+  const withRoles = models.filter(m => m.gatewayRoles.length > 0).length;
+
+  summary.innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <span class="badge ${noKey > 0 ? 'red' : 'green'}">${noKey > 0 ? '⚠️' : '✅'} ${noKey} without key</span>
+      <span class="badge blue">📦 ${withDeps} with cron deps</span>
+      <span class="badge purple">🌐 ${withRoles} with gateway roles</span>
+    </div>
+  `;
+
+  if (!models.length) {
+    grid.innerHTML = '<div class="text-muted">No models configured.</div>';
+    return;
+  }
+
+  grid.innerHTML = models.map(m => {
+    const hasIssue = !m.keyConfigured;
+    const hasWarning = m.cronDeps > 0 && !m.keyConfigured;
+    const cardClass = hasWarning ? 'has-issues' : (!m.keyConfigured ? 'has-issues' : (m.cronDeps > 0 ? '' : ''));
+
+    const roleBadges = m.gatewayRoles.map(r => {
+      const colors = { 'primary': 'purple', 'fallback': 'blue', 'image-primary': 'orange', 'image-fallback': 'yellow' };
+      return `<span class="badge ${colors[r]||'gray'}">${escHtml(r)}</span>`;
+    }).join('');
+
+    return `
+      <div class="health-card ${cardClass}">
+        <div class="health-card-header">
+          <span class="dot ${m.keyConfigured ? 'green' : 'red'}" style="margin-top:3px;flex-shrink:0;"></span>
+          <div>
+            <div class="health-model-name">${escHtml(m.modelId)}</div>
+            ${m.alias ? `<div class="health-alias">alias: ${escHtml(m.alias)}</div>` : ''}
+          </div>
+        </div>
+        <div class="health-meta">
+          <span class="badge ${m.keyConfigured?'green':'red'}">${m.keyConfigured ? '🔑 '+escHtml(m.keyEnv||m.provider) : '❌ No key'}</span>
+          ${m.cronDeps ? `<span class="badge blue">⏰ ${m.cronDeps} cron jobs</span>` : '<span class="badge gray">no cron deps</span>'}
+          ${roleBadges}
+        </div>
+        ${!m.keyConfigured ? `<div class="err-box" style="margin-top:10px;font-size:11px;">Provider '${escHtml(m.provider)}' has no API key. This model will fail.</div>` : ''}
+        <div class="health-actions">
+          ${m.canRemove
+            ? `<button class="btn btn-danger btn-sm" onclick="initiateRemoveModel('${escHtml(m.modelId)}')">✕ Remove</button>`
+            : `<button class="btn btn-danger btn-sm" onclick="initiateRemoveModel('${escHtml(m.modelId)}')">✕ Remove...</button>`
+          }
+          ${!m.keyConfigured ? `<button class="btn btn-ghost btn-sm" onclick="openKeyModal()">🔑 Add Key</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL 4 — BACKUPS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadBackups() {
+  try {
+    const data = await apiFetch('/api/backups');
+    renderBackups(data.backups || []);
+    document.getElementById('tab-badge-backups').textContent = (data.backups || []).length;
+  } catch(e) {
+    document.getElementById('backups-list').innerHTML = `<div class="err-box">${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderBackups(backups) {
+  const el = document.getElementById('backups-list');
+  if (!backups.length) {
+    el.innerHTML = '<div class="text-muted" style="padding:20px;text-align:center;">No backups yet. Make a change or click "Backup Now".</div>';
+    return;
+  }
+
+  el.innerHTML = `<table><thead><tr><th>Backup</th><th>Files</th><th>Age</th><th>Actions</th></tr></thead><tbody>` +
+    backups.map(b => {
+      const ts = new Date(b.timestamp * 1000);
+      const ago = _timeAgo(b.timestamp * 1000);
+      return `<tr>
+        <td class="font-mono" style="font-size:11px;">${escHtml(b.name)}</td>
+        <td class="text-muted text-sm">${escHtml(b.files.join(', '))}</td>
+        <td class="text-muted text-sm">${ago}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="restoreBackup('${escHtml(b.name)}')">⏮️ Restore</button></td>
+      </tr>`;
+    }).join('') + `</tbody></table>`;
+}
+
+async function createBackup() {
+  try {
+    const r = await apiPost('/api/backup/create', {});
+    toast('Backup created!', 'success');
+    loadBackups();
+  } catch(e) {
+    toast('Backup failed: ' + e.message, 'error');
+  }
+}
+
+async function restoreBackup(name) {
+  if (!confirm(`Restore backup '${name}'? Current state will be backed up first as 'pre-restore'.`)) return;
+  try {
+    const r = await apiPost('/api/backup/restore', { name });
+    if (r.ok) {
+      toast(`Backup '${name}' restored! Reload the page to see changes.`, 'success');
+      loadGatewayPanel();
+      loadCronJobs();
+      loadModelHealth();
+      loadBackups();
+    } else {
+      toast('Restore failed.', 'error');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+function _timeAgo(tsMs) {
+  const delta = (Date.now() - tsMs) / 1000;
+  if (delta < 60) return `${Math.round(delta)}s ago`;
+  if (delta < 3600) return `${Math.round(delta/60)}m ago`;
+  if (delta < 86400) return `${Math.round(delta/3600)}h ago`;
+  return `${Math.round(delta/86400)}d ago`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function runValidation() {
+  const el = document.getElementById('validate-result');
+  el.innerHTML = `<div style="padding:8px 24px;background:var(--surface2);font-size:12px;"><span class="spinner"></span> Running validation...</div>`;
+
+  try {
+    const r = await apiFetch('/api/validate');
+    const color = r.ok ? 'var(--green)' : 'var(--red)';
+    const icon = r.ok ? '✅' : '❌';
+
+    let html = `<div style="padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border);font-size:12px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <span style="color:${color};font-weight:600;">${icon} ${escHtml(r.summary)}</span>`;
+
+    if (r.issues.length) {
+      html += `<span style="color:var(--red)">Issues: ${r.issues.map(i => escHtml(i)).join(' | ')}</span>`;
+    }
+    if (r.warnings.length) {
+      html += `<span style="color:var(--yellow)">Warnings: ${r.warnings.map(w => escHtml(w)).join(' | ')}</span>`;
+    }
+    html += `<button onclick="document.getElementById('validate-result').innerHTML=''" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;">✕</button></div>`;
+    el.innerHTML = html;
+
+    if (!r.ok) toast(`Validation: ${r.summary}`, 'error');
+    else toast('Validation passed!', 'success');
+  } catch(e) {
+    el.innerHTML = `<div class="err-box" style="margin:8px 24px;">${escHtml(e.message)}</div>`;
+    toast('Validation error: ' + e.message, 'error');
+  }
+}
+</script>
+</body>
+</html>

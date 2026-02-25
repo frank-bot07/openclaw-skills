@@ -1,0 +1,26 @@
+{
+  "server": {
+    "port": 7878,
+    "host": "localhost"
+  },
+  "backups": {
+    "dir": "~/.openclaw/switchboard-backups",
+    "maxKeep": 10
+  },
+  "paths": {
+    "config": "~/.openclaw/openclaw.json",
+    "cronJobs": "~/.openclaw/cron/jobs.json",
+    "workspaceEnv": "~/.openclaw/workspace/.env"
+  },
+  "providers": {
+    "anthropic":    { "displayName": "Anthropic", "envKeys": ["ANTHROPIC_API_KEY"] },
+    "openai":       { "displayName": "OpenAI",    "envKeys": ["OPENAI_API_KEY"] },
+    "google":       { "displayName": "Google",    "envKeys": ["GOOGLE_API_KEY", "GEMINI_API_KEY"] },
+    "xai":          { "displayName": "xAI",       "envKeys": ["XAI_API_KEY"] },
+    "moonshot":     { "displayName": "Moonshot",  "envKeys": ["MOONSHOT_API_KEY"] },
+    "minimax":      { "displayName": "MiniMax",   "envKeys": ["MINIMAX_API_KEY"] },
+    "mistral":      { "displayName": "Mistral",   "envKeys": ["MISTRAL_API_KEY"] },
+    "cohere":       { "displayName": "Cohere",    "envKeys": ["COHERE_API_KEY"] },
+    "groq":         { "displayName": "Groq",      "envKeys": ["GROQ_API_KEY"] }
+  }
+}
