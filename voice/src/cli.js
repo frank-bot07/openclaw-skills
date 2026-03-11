@@ -110,7 +110,7 @@ profile.command('default')
 // --- Utilities ---
 program.command('refresh')
   .description('Refresh interchange files')
-  .action(() => { generateInterchange(); console.log('Interchange files refreshed.'); });
+  .action(async () => { await generateInterchange(); console.log('Interchange files refreshed.'); });
 
 program.command('backup')
   .option('--output <path>', 'Output path')

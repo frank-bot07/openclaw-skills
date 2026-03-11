@@ -119,14 +119,14 @@ describe('Voice Skill Tests', () => {
     assert.strictEqual(profiles.length, 2);
   });
 
-  it('9. Interchange refresh generates valid .md files without API keys', () => {
+  it('9. Interchange refresh generates valid .md files without API keys', async () => {
     addProfile(db, 'nova', 'pNInz6obpgDQGcFmaJgB', '{"description": "Warm voice"}');
     const id = startConversation(db, 'Test conv');
     addTranscriptLine(db, id, 'user', 'Hi');
     addTranscriptLine(db, id, 'assistant', 'Hello');
     endConversation(db, id);
-    generateInterchange(db);
-    const workspaceDir = path.join(testDir, '..', '..', '..');
+    await generateInterchange(db);
+    const workspaceDir = path.join(testDir, '..', '..');
     const capsPath = path.join(workspaceDir, 'interchange', 'voice', 'ops', 'capabilities.md');
     const profPath = path.join(workspaceDir, 'interchange', 'voice', 'ops', 'profiles.md');
     const recentPath = path.join(workspaceDir, 'interchange', 'voice', 'state', 'recent.md');
