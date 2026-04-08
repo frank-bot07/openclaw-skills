@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDb } from './db.js';
 import { listProfiles } from './profiles.js';
+import { listConversations } from './conversations.js';
 import { writeMd } from '../../interchange/src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

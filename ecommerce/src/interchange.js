@@ -8,9 +8,16 @@ import { fileURLToPath } from 'node:url';
 import { listProducts } from './products.js';
 import { listOrders } from './orders.js';
 import { listAlerts } from './alerts.js';
+import { writeMd } from '../../interchange/src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const interchangeDir = path.join(__dirname, '..', '..', 'interchange', 'ecommerce');
+
+const BASE_META = {
+  skill: 'ecommerce',
+  generator: 'ecommerce@1.0.0',
+  version: 1,
+};
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
@@ -20,16 +27,17 @@ function ensureDir(dir) {
  * Generate all interchange files.
  * @param {import('better-sqlite3').Database} db
  */
-export function generateInterchange(db) {
-  generateOps();
-  generateState(db);
+export async function generateInterchange(db) {
+  await generateOps();
+  await generateState(db);
 }
 
-function generateOps() {
+async function generateOps() {
   const opsDir = path.join(interchangeDir, 'ops');
   ensureDir(opsDir);
 
-  fs.writeFileSync(path.join(opsDir, 'capabilities.md'), `# E-commerce Capabilities
+  const meta = { ...BASE_META, type: 'summary', layer: 'ops', tags: ['capabilities'] };
+  const content = `# E-commerce Capabilities
 
 ## Commands
 - \`ecom watch add <name> --url <url> [--target <price>]\`
@@ -44,10 +52,11 @@ function generateOps() {
 - \`ecom alert list [--pending]\`
 - \`ecom alert ack <id>\`
 - \`ecom refresh\`
-`);
+`;
+  await writeMd(path.join(opsDir, 'capabilities.md'), meta, content);
 }
 
-function generateState(db) {
+async function generateState(db) {
   const stateDir = path.join(interchangeDir, 'state');
   ensureDir(stateDir);
 
@@ -55,7 +64,8 @@ function generateState(db) {
   const productCount = products.length;
   const belowTarget = products.filter(p => p.current_price && p.target_price && p.current_price <= p.target_price).length;
 
-  fs.writeFileSync(path.join(stateDir, 'summary.md'), `# E-commerce State
+  const meta = { ...BASE_META, type: 'summary', layer: 'state', tags: ['summary'] };
+  const content = `# E-commerce State
 
 ## Watchlist
 - Products tracked: ${productCount}
@@ -67,5 +77,6 @@ function generateState(db) {
 
 ## Alerts
 - Pending: ${listAlerts(db, { pending: true }).length}
-`);
+`;
+  await writeMd(path.join(stateDir, 'summary.md'), meta, content);
 }

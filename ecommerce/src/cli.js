@@ -123,8 +123,8 @@ alert.command('ack')
 // --- Utilities ---
 program.command('refresh')
   .description('Refresh interchange files')
-  .action(() => {
-    generateInterchange(db);
+  .action(async () => {
+    await generateInterchange(db);
     console.log('Interchange refreshed');
   });
 
